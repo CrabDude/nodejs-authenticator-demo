@@ -1,5 +1,6 @@
 let mongoose = require('mongoose')
-let bcrypt = require('bcrypt')
+let crypto = require('crypto')
+const PEPPER = 'N0D3ASYC!'
 
 require('songbird')
 
@@ -9,11 +10,13 @@ let userSchema = mongoose.Schema({
 })
 
 userSchema.methods.generateHash = async function(password) {
-  return await bcrypt.promise.hash(password, 8)
+  let hash = await crypto.promise.pbkdf2(password, PEPPER, 4096, 512, 'sha256')
+  return hash.toString('hex')
 }
 
 userSchema.methods.validatePassword = async function(password) {
-  return await bcrypt.promise.compare(password, this.password)
+  let hash = await crypto.promise.pbkdf2(password, PEPPER, 4096, 512, 'sha256')
+  return hash.toString('hex') === this.password
 }
 
 module.exports = mongoose.model('User', userSchema)
